@@ -1,5 +1,6 @@
 using System.Text.Json;
 using DedupTool;
+using Microsoft.Data.Sqlite;
 
 internal static class Program
 {
@@ -11,14 +12,30 @@ internal static class Program
             return 2;
         }
 
-        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-        var batch = JsonSerializer.Deserialize<Batch>(File.ReadAllText(args[0]), options)
-                    ?? throw new InvalidOperationException("Batch file was empty.");
-
-        var result = Deduper.Run(batch);
-        LoadFileWriter.Write(args[1], result.Rows);
-
-        Console.WriteLine($"{batch.BatchId}: {batch.Documents.Count} documents in, {result.Rows.Count} out, {result.Suppressed} suppressed as duplicates.");
-        return 0;
+        try
+        {
+            using var job = new DiskJob(args[0], args[1]);
+            (string BatchId, int Input, int Suppressed, int Mixed) result;
+            using (var pipeline = new DiskPipeline(job))
+            {
+                result = pipeline.Run();
+                File.Delete(job.OutputTemporary);
+                LoadFileWriter.Write(job.Destination, job.OutputTemporary, pipeline.Rows());
+            }
+            if (result.Mixed > 0)
+                Console.Error.WriteLine($"Warning: {result.Mixed} mixed-custodian families cannot be independently severed without provenance.");
+            try { job.Cleanup(); }
+            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+            {
+                Console.Error.WriteLine($"Warning: output was published but sensitive job scratch could not be removed: {exception.Message}");
+            }
+            Console.WriteLine($"{result.BatchId}: {result.Input} documents in, {result.Input - result.Suppressed} out, {result.Suppressed} suppressed as duplicates.");
+            return 0;
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or JsonException or InvalidDataException or SqliteException)
+        {
+            Console.Error.WriteLine($"Deduplication failed: {exception.Message}");
+            return 1;
+        }
     }
 }

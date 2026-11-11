@@ -15,7 +15,7 @@ public class DeduperTests
     {
         var batch = new Batch
         {
-            Documents = new() { Loose("A", "c1", "h1"), Loose("B", "c2", "h1") },
+            Documents = new() { Loose("A", "c1", "h1"), Loose("B", "c1", "h1") },
         };
 
         var result = Deduper.Run(batch);

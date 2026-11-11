@@ -1,20 +1,22 @@
+using System.Text.Json.Serialization;
+
 namespace DedupTool;
 
 public class Batch
 {
-    public string BatchId { get; set; } = "";
-    public List<Document> Documents { get; set; } = new();
+    [JsonRequired] public string BatchId { get; set; } = "";
+    [JsonRequired] public List<Document> Documents { get; set; } = new();
 }
 
 public class Document
 {
-    public string DocId { get; set; } = "";
-    public string Custodian { get; set; } = "";
-    public string DocType { get; set; } = "";      // email | attachment | loose
-    public string? ParentId { get; set; }
-    public string FileName { get; set; } = "";
-    public string Sha256 { get; set; } = "";
-    public long SizeBytes { get; set; }
+    [JsonRequired] public string DocId { get; set; } = "";
+    [JsonRequired] public string Custodian { get; set; } = "";
+    [JsonRequired] public string DocType { get; set; } = "";      // email | attachment | loose
+    [JsonRequired] public string? ParentId { get; set; }
+    [JsonRequired] public string FileName { get; set; } = "";
+    [JsonRequired] public string Sha256 { get; set; } = "";
+    [JsonRequired] public long SizeBytes { get; set; }
 
     // Email-only fields. Null for attachments and loose files.
     public string? SentDate { get; set; }

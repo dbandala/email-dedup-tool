@@ -5,6 +5,8 @@
 
 # dotenv files
 .env
+.deduptool-*/
+.deduptool-*.lock
 
 # User-specific files
 *.rsuser
